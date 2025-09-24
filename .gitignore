@@ -1,0 +1,5 @@
+node_modules/
+coverage/
+codecov.yml
+codecov
+coverage/

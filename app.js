@@ -1,27 +1,51 @@
 const express = require('express')
-const app = express()
-const port = 3000
 
-app.get('/', (req, res) => {
-  const text = `<pre>
+function createApp() {
+  const app = express()
+
+  app.get('/', (req, res) => {
+    const text = `<pre>
     Hello world!
-    Application version: ${process.env.APP_VERSION}
-    Environment: ${process.env.DEPLOY_ENV}
-    Hostname: ${process.env.HOSTNAME}
+    Application version: ${process.env.APP_VERSION || 'unknown'}
+    Environment: ${process.env.DEPLOY_ENV || 'unknown'}
+    Hostname: ${process.env.HOSTNAME || 'unknown'}
   </pre>`;
-  res.send(text);
-})
+    res.send(text);
+  })
 
-const server = app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
-
-process.on('SIGTERM', shutDown);
-process.on('SIGINT', shutDown);
-
-function shutDown() {
-  server.close(() => {
-    console.log('Killing myself...');
-    process.exit(0);
-  });
+  return app
 }
+
+function createShutdownHandler(server, { exit = process.exit, logger = console } = {}) {
+  return () => {
+    if (!server || typeof server.close !== 'function') {
+      logger.error('Server is not running')
+      return
+    }
+
+    server.close(() => {
+      logger.log('Killing myself...')
+      exit(0)
+    })
+  }
+}
+
+function startServer({ port = process.env.PORT || 3000, app = createApp(), signals = ['SIGTERM', 'SIGINT'], exit = process.exit, logger = console, processRef = process } = {}) {
+  const server = app.listen(port, () => {
+    logger.log(`Example app listening at http://localhost:${port}`)
+  })
+
+  const shutDown = createShutdownHandler(server, { exit, logger })
+
+  if (signals && Array.isArray(signals)) {
+    signals.forEach((signal) => processRef.on(signal, shutDown))
+  }
+
+  return { app, server, shutDown }
+}
+
+if (require.main === module) {
+  startServer()
+}
+
+module.exports = { createApp, startServer, createShutdownHandler }
