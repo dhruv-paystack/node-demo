@@ -36,6 +36,36 @@ describe('createApp', () => {
     expect(response.status).toBe(200)
     expect(response.text).toContain('unknown')
   })
+
+  test('GET /status returns application status details', async () => {
+    process.env.APP_VERSION = '4.5.6'
+    process.env.DEPLOY_ENV = 'ci'
+    process.env.HOSTNAME = 'unit-test'
+
+    const app = createApp()
+    const response = await request(app).get('/status')
+
+    expect(response.status).toBe(200)
+    expect(response.body).toMatchObject({
+      status: 'ok',
+      version: '4.5.6',
+      environment: 'ci',
+      hostname: 'unit-test'
+    })
+    expect(typeof response.body.uptime).toBe('number')
+    expect(response.body.uptime).toBeGreaterThanOrEqual(0)
+  })
+
+  test('GET /health returns health information', async () => {
+    const app = createApp()
+    const response = await request(app).get('/health')
+
+    expect(response.status).toBe(200)
+    expect(response.body.healthy).toBe(true)
+    expect(typeof response.body.timestamp).toBe('string')
+    expect(typeof response.body.uptime).toBe('number')
+    expect(response.body.uptime).toBeGreaterThanOrEqual(0)
+  })
 })
 
 describe('createShutdownHandler', () => {
