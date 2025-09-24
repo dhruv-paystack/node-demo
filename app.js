@@ -1,4 +1,5 @@
 const express = require('express')
+const { getStatus } = require('./controllers/statusController')
 
 function createApp() {
   const app = express()
@@ -12,6 +13,8 @@ function createApp() {
   </pre>`;
     res.send(text);
   })
+
+  app.get('/status', getStatus)
 
   return app
 }
