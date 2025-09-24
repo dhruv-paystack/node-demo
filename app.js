@@ -1,5 +1,6 @@
 const express = require('express')
 const { getStatus } = require('./controllers/statusController')
+const { getHealth } = require('./controllers/healthController')
 
 function createApp() {
   const app = express()
@@ -15,6 +16,7 @@ function createApp() {
   })
 
   app.get('/status', getStatus)
+  app.get('/health', getHealth)
 
   return app
 }
